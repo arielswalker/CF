@@ -45,6 +45,10 @@ jobs:
         run: |
           echo "BUILD_DIRECTORY=$(pwd)" >> $GITHUB_ENV
           ls
+          cd apps
+          ls
+          cd cf
+          ls
           git log -1 --pretty=oneline
           git submodule
           rm -r .git
