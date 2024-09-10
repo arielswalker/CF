@@ -48,7 +48,7 @@ jobs:
         run: ./.github/scripts/codeql.sh 
         env:
           TARGET: ${{ matrix.target }}
-          PREP_COMMAND: 'cd apps; ls; cd cf; ls; make prep; make -C build/tools/elf2cfetbl'
+          PREP_COMMAND: 'make prep; make -C build/tools/elf2cfetbl'
           COMPONENT_PATH: 'apps/cf'
           MAKE_COMMAND: 'cp cf apps; make -C build/native/default_cpu1/apps/cf'
           SETUP_COMMAND: 'cp ./cfe/cmake/Makefile.sample Makefile && cp -r ./cfe/cmake/sample_defs sample_defs; sed -i "/list(APPEND MISSION_GLOBAL_APPLIST/a list(APPEND MISSION_GLOBAL_APPLIST cf)" sample_defs/targets.cmake'
