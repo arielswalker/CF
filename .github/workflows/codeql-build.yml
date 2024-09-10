@@ -39,20 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
            submodules: recursive
-           path: apps/cf
-
-      - name: Setup cFS-Bundle directory (component-path != cFS)
-        run: |
-          echo "BUILD_DIRECTORY=$(pwd)" >> $GITHUB_ENV
-          ls
-          git log -1 --pretty=oneline
-          git submodule
-          rm -r .git
-          rm -rf apps/cf
-          ls
-          cd apps
-          ls         
-          ln -s ${{github.workspace}} apps/cf
+           path: cf
           
       - name: Make the Script Executable
         run: chmod +x ./.github/scripts/codeql.sh
@@ -63,7 +50,7 @@ jobs:
           TARGET: ${{ matrix.target }}
           PREP_COMMAND: 'cd apps; ls; cd cf; ls; make prep; make -C build/tools/elf2cfetbl'
           COMPONENT_PATH: 'apps/cf'
-          MAKE_COMMAND: 'make -C build/native/default_cpu1/apps/cf'
+          MAKE_COMMAND: 'cp cf apps; make -C build/native/default_cpu1/apps/cf'
           SETUP_COMMAND: 'cp ./cfe/cmake/Makefile.sample Makefile && cp -r ./cfe/cmake/sample_defs sample_defs; sed -i "/list(APPEND MISSION_GLOBAL_APPLIST/a list(APPEND MISSION_GLOBAL_APPLIST cf)" sample_defs/targets.cmake'
           
       - name: Move Sarif
