@@ -40,6 +40,15 @@ jobs:
         with:
            submodules: recursive
            path: apps/cf
+
+      - name: Setup cFS-Bundle directory (component-path != cFS)
+        run: |
+          echo "BUILD_DIRECTORY=$(pwd)" >> $GITHUB_ENV
+          git log -1 --pretty=oneline
+          git submodule
+          rm -r .git
+          rm -rf apps/cf
+          ln -s ${{github.workspace}} apps/cf
           
       - name: Make the Script Executable
         run: chmod +x ./.github/scripts/codeql.sh
