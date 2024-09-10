@@ -44,6 +44,7 @@ jobs:
       - name: Setup cFS-Bundle directory (component-path != cFS)
         run: |
           echo "BUILD_DIRECTORY=$(pwd)" >> $GITHUB_ENV
+          ls
           git log -1 --pretty=oneline
           git submodule
           rm -r .git
