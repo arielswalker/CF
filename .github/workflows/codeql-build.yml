@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
         with:
            submodules: recursive
-           path: cf
+           path: apps/cf
           
       - name: Make the Script Executable
         run: chmod +x ./.github/scripts/codeql.sh
