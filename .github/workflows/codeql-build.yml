@@ -45,14 +45,13 @@ jobs:
         run: |
           echo "BUILD_DIRECTORY=$(pwd)" >> $GITHUB_ENV
           ls
-          cd apps
-          ls
-          cd cf
-          ls
           git log -1 --pretty=oneline
           git submodule
           rm -r .git
           rm -rf apps/cf
+          ls
+          cd apps
+          ls         
           ln -s ${{github.workspace}} apps/cf
           
       - name: Make the Script Executable
