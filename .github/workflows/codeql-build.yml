@@ -7,7 +7,7 @@ on:
 jobs:
   #Checks for duplicate actions. Skips push actions if there is a matching or duplicate pull-request action.
   check-for-duplicates:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ github.repository_owner == 'cFS' && 'linux' || 'ubuntu-latest' }}
     # Map a step output to a job output
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -43,24 +43,15 @@ jobs:
           
       - name: Make the Script Executable
         run: chmod +x ./.github/scripts/codeql.sh
-
-
-      - name: Test
-        run: |
-          cp ./cfe/cmake/Makefile.sample Makefile
-          cp -r ./cfe/cmake/sample_defs sample_defs
-          sed -i "/list(APPEND MISSION_GLOBAL_APPLIST/a list(APPEND MISSION_GLOBAL_APPLIST cf)" sample_defs/targets.cmake
-          make OMIT_DEPRECATED=true BUILDTYPE=release SIMULATION=native prep
-          make -C build/tools/elf2cfetbl         
-         
         
       - name: Run CodeQL Analysis Script
         run: ./.github/scripts/codeql.sh 
         env:
-          TARGET: ${{ matrix.target }}
-          PREP_COMMAND: 'which clang; which gcc; cp -r cf ./apps; cp ./cfe/cmake/Makefile.sample Makefile; cp -r ./cfe/cmake/sample_defs sample_defs; sed -i "/list(APPEND MISSION_GLOBAL_APPLIST/a list(APPEND MISSION_GLOBAL_APPLIST cf)" sample_defs/targets.cmake; make OMIT_DEPRECATED=true BUILDTYPE=release SIMULATION=native prep; make -C build/tools/elf2cfetbl; ls'
+          TARGET: ${{ matrix.target }}          
           COMPONENT_PATH: 'apps/cf'
-          MAKE_COMMAND: 'ls'
+          SETUP_COMMAND: 'cp ./cfe/cmake/Makefile.sample Makefile; cp -r ./cfe/cmake/sample_defs sample_defs; sed -i "/list(APPEND MISSION_GLOBAL_APPLIST/a list(APPEND MISSION_GLOBAL_APPLIST cf)" sample_defs/targets.cmake' 
+          PREP_COMMAND: 'make OMIT_DEPRECATED=true BUILDTYPE=release SIMULATION=native prep'
+          MAKE_COMMAND: 'make -C build/tools/elf2cfetbl '
 
       - name: Move Sarif
         run: |
