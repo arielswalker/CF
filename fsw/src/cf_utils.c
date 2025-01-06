@@ -331,7 +331,7 @@ CF_CListTraverse_Status_t CF_PrioSearch(CF_CListNode_t *node, void *context)
  *-----------------------------------------------------------------*/
 void CF_InsertSortPrio(CF_Transaction_t *txn, CF_QueueIdx_t queue)
 {
-    int           insert_back = 0;
+    bool           insert_back = false;
     CF_Channel_t *chan        = &CF_AppData.engine.channels[txn->chan_num];
 
     CF_Assert(txn->chan_num < CF_NUM_CHANNELS);
@@ -343,7 +343,7 @@ void CF_InsertSortPrio(CF_Transaction_t *txn, CF_QueueIdx_t queue)
     if (!chan->qs[queue])
     {
         /* list is empty, so just insert */
-        insert_back = 1;
+        insert_back = true;
     }
     else
     {
@@ -355,7 +355,7 @@ void CF_InsertSortPrio(CF_Transaction_t *txn, CF_QueueIdx_t queue)
         }
         else
         {
-            insert_back = 1;
+            insert_back = true;
         }
     }
 
@@ -507,8 +507,8 @@ CFE_Status_t CF_WrappedLseek(osal_id_t fd, off_t offset, int mode)
 bool CF_TxnStatus_IsError(CF_TxnStatus_t txn_stat)
 {
     /* The value of CF_TxnStatus_UNDEFINED (-1) indicates a transaction is in progress and no error
-     * has occurred yet.  This will be will be set to CF_TxnStatus_NO_ERROR (0) after successful
-     * completion of the transaction (FIN/EOF).  Anything else indicates a problem has occurred. */
+     * has occurred yet.  This will be set to CF_TxnStatus_NO_ERROR (0) after successful completion
+     * of the transaction (FIN/EOF).  Anything else indicates a problem has occurred. */
     return (txn_stat > CF_TxnStatus_NO_ERROR);
 }
 

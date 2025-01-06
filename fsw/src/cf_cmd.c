@@ -61,14 +61,14 @@ CFE_Status_t CF_NoopCmd(const CF_NoopCmd_t *msg)
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-CFE_Status_t CF_ResetCmd(const CF_ResetCmd_t *msg)
+CFE_Status_t CF_ResetCountersCmd(const CF_ResetCountersCmd_t *msg)
 {
     const CF_UnionArgs_Payload_t *data     = &msg->Payload;
-    static const char *           names[5] = {"all", "cmd", "fault", "up", "down"};
+    static const char            *names[5] = {"all", "cmd", "fault", "up", "down"};
     /* 0=all, 1=cmd, 2=fault 3=up 4=down */
     uint8 param = data->byte[0];
     int   i;
-    int   acc = 1;
+    bool  acc = true;
 
     if (param > 4)
     {
@@ -86,7 +86,7 @@ CFE_Status_t CF_ResetCmd(const CF_ResetCmd_t *msg)
         {
             /* command counters */
             memset(&CF_AppData.hk.Payload.counters, 0, sizeof(CF_AppData.hk.Payload.counters));
-            acc = 0; /* don't increment accept counter on command counter reset */
+            acc = false; /* don't increment accept counter on command counter reset */
         }
 
         /* if the param is CF_Reset_fault, or all counters */
@@ -426,7 +426,7 @@ void CF_DoSuspRes_Txn(CF_Transaction_t *txn, CF_ChanAction_SuspResArg_t *context
 void CF_DoSuspRes(const CF_Transaction_Payload_t *payload, uint8 action)
 {
     /* ok to not bounds check action, because the caller is using it in two places with constant values 0 or 1 */
-    static const char *        msgstr[] = {"resume", "suspend"};
+    static const char         *msgstr[] = {"resume", "suspend"};
     CF_ChanAction_SuspResArg_t args     = {0, action};
     int ret = CF_TsnChanAction(payload, msgstr[action], (CF_TsnChanAction_fn_t)CF_DoSuspRes_Txn, &args);
 
@@ -488,7 +488,7 @@ CFE_Status_t CF_ResumeCmd(const CF_ResumeCmd_t *msg)
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CF_CmdCancel_Txn(CF_Transaction_t *txn, void *ignored)
+void CF_Cancel_TxnCmd(CF_Transaction_t *txn, void *ignored)
 {
     CF_CFDP_CancelTransaction(txn);
 }
@@ -501,7 +501,7 @@ void CF_CmdCancel_Txn(CF_Transaction_t *txn, void *ignored)
  *-----------------------------------------------------------------*/
 CFE_Status_t CF_CancelCmd(const CF_CancelCmd_t *msg)
 {
-    if (CF_TsnChanAction(&msg->Payload, "cancel", CF_CmdCancel_Txn, NULL) > 0)
+    if (CF_TsnChanAction(&msg->Payload, "cancel", CF_Cancel_TxnCmd, NULL) > 0)
     {
         CFE_EVS_SendEvent(CF_CMD_CANCEL_INF_EID, CFE_EVS_EventType_INFORMATION,
                           "CF: cancel transaction successfully initiated");
@@ -523,9 +523,9 @@ CFE_Status_t CF_CancelCmd(const CF_CancelCmd_t *msg)
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CF_CmdAbandon_Txn(CF_Transaction_t *txn, void *ignored)
+void CF_Abandon_TxnCmd(CF_Transaction_t *txn, void *ignored)
 {
-    CF_CFDP_ResetTransaction(txn, 0);
+    CF_CFDP_ResetTransaction(txn, false);
 }
 
 /*----------------------------------------------------------------
@@ -536,7 +536,7 @@ void CF_CmdAbandon_Txn(CF_Transaction_t *txn, void *ignored)
  *-----------------------------------------------------------------*/
 CFE_Status_t CF_AbandonCmd(const CF_AbandonCmd_t *msg)
 {
-    if (CF_TsnChanAction(&msg->Payload, "abandon", CF_CmdAbandon_Txn, NULL) > 0)
+    if (CF_TsnChanAction(&msg->Payload, "abandon", CF_Abandon_TxnCmd, NULL) > 0)
     {
         CFE_EVS_SendEvent(CF_CMD_ABANDON_INF_EID, CFE_EVS_EventType_INFORMATION, "CF: abandon successful");
         ++CF_AppData.hk.Payload.counters.cmd;
@@ -726,7 +726,7 @@ CF_CListTraverse_Status_t CF_PurgeHistory(CF_CListNode_t *node, void *arg)
 CF_CListTraverse_Status_t CF_PurgeTransaction(CF_CListNode_t *node, void *ignored)
 {
     CF_Transaction_t *txn = container_of(node, CF_Transaction_t, cl_node);
-    CF_CFDP_ResetTransaction(txn, 0);
+    CF_CFDP_ResetTransaction(txn, false);
     return CF_CLIST_CONT;
 }
 
@@ -740,25 +740,25 @@ CF_ChanAction_Status_t CF_DoPurgeQueue(uint8 chan_num, void *arg)
 {
     CF_ChanAction_Status_t ret = CF_ChanAction_Status_SUCCESS;
     /* no need to bounds check chan_num, done in caller */
-    CF_Channel_t *                chan = &CF_AppData.engine.channels[chan_num];
+    CF_Channel_t                 *chan = &CF_AppData.engine.channels[chan_num];
     const CF_UnionArgs_Payload_t *data = ((CF_ChanAction_MsgArg_t *)arg)->data;
 
-    int pend = 0;
-    int hist = 0;
+    bool pend = false;
+    bool hist = false;
 
     switch (data->byte[1])
     {
         case 0: /* pend */
-            pend = 1;
+            pend = true;
             break;
 
         case 1: /* history */
-            hist = 1;
+            hist = true;
             break;
 
         case 2: /* both */
-            pend = 1;
-            hist = 1;
+            pend = true;
+            hist = true;
             break;
 
         default:
@@ -946,7 +946,7 @@ CFE_Status_t CF_WriteQueueCmd(const CF_WriteQueueCmd_t *msg)
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-CF_ChanAction_Status_t CF_CmdValidateChunkSize(CF_ChunkSize_t val, uint8 chan_num /* ignored */)
+CF_ChanAction_Status_t CF_ValidateChunkSizeCmd(CF_ChunkSize_t val, uint8 chan_num /* ignored */)
 {
     CF_ChanAction_Status_t ret = CF_ChanAction_Status_SUCCESS;
     if (val > sizeof(CF_CFDP_PduFileDataContent_t))
@@ -962,7 +962,7 @@ CF_ChanAction_Status_t CF_CmdValidateChunkSize(CF_ChunkSize_t val, uint8 chan_nu
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-CF_ChanAction_Status_t CF_CmdValidateMaxOutgoing(uint32 val, uint8 chan_num)
+CF_ChanAction_Status_t CF_ValidateMaxOutgoingCmd(uint32 val, uint8 chan_num)
 {
     CF_ChanAction_Status_t ret = CF_ChanAction_Status_SUCCESS;
 
@@ -981,14 +981,14 @@ CF_ChanAction_Status_t CF_CmdValidateMaxOutgoing(uint32 val, uint8 chan_num)
  * See description in cf_cmd.h for argument/return detail
  *
  *-----------------------------------------------------------------*/
-void CF_GetSetParamCmd(uint8 is_set, CF_GetSet_ValueID_t param_id, uint32 value, uint8 chan_num)
+void CF_GetSetParamCmd(bool is_set, CF_GetSet_ValueID_t param_id, uint32 value, uint8 chan_num)
 {
     CF_ConfigTable_t *config;
     CFE_Status_t      status = CF_ERROR;
     bool              valid_set;
     struct
     {
-        void * ptr;
+        void  *ptr;
         size_t size;
         CF_ChanAction_Status_t (*fn)(uint32, uint8 chan_num);
     } item;
@@ -1022,7 +1022,7 @@ void CF_GetSetParamCmd(uint8 is_set, CF_GetSet_ValueID_t param_id, uint32 value,
         case CF_GetSet_ValueID_outgoing_file_chunk_size:
             item.ptr  = &config->outgoing_file_chunk_size;
             item.size = sizeof(config->outgoing_file_chunk_size);
-            item.fn   = CF_CmdValidateChunkSize;
+            item.fn   = CF_ValidateChunkSizeCmd;
             break;
         case CF_GetSet_ValueID_ack_limit:
             item.ptr  = &config->chan[chan_num].ack_limit;
@@ -1039,7 +1039,7 @@ void CF_GetSetParamCmd(uint8 is_set, CF_GetSet_ValueID_t param_id, uint32 value,
         case CF_GetSet_ValueID_chan_max_outgoing_messages_per_wakeup:
             item.ptr  = &config->chan[chan_num].max_outgoing_messages_per_wakeup;
             item.size = sizeof(config->chan[chan_num].max_outgoing_messages_per_wakeup);
-            item.fn   = CF_CmdValidateMaxOutgoing;
+            item.fn   = CF_ValidateMaxOutgoingCmd;
             break;
         default:
             break;
@@ -1061,7 +1061,7 @@ void CF_GetSetParamCmd(uint8 is_set, CF_GetSet_ValueID_t param_id, uint32 value,
         {
             if (CF_ChanAction_Status_IS_SUCCESS(item.fn(value, chan_num)))
             {
-                valid_set = 1;
+                valid_set = true;
             }
             else
             {
@@ -1071,7 +1071,7 @@ void CF_GetSetParamCmd(uint8 is_set, CF_GetSet_ValueID_t param_id, uint32 value,
         }
         else
         {
-            valid_set = 1;
+            valid_set = true;
         }
 
         if (valid_set)
@@ -1140,7 +1140,7 @@ CFE_Status_t CF_SetParamCmd(const CF_SetParamCmd_t *msg)
 {
     const CF_SetParam_Payload_t *cmd = &msg->Payload;
 
-    CF_GetSetParamCmd(1, cmd->key, cmd->value, cmd->chan_num);
+    CF_GetSetParamCmd(true, cmd->key, cmd->value, cmd->chan_num);
 
     return CFE_SUCCESS;
 }
@@ -1155,7 +1155,7 @@ CFE_Status_t CF_GetParamCmd(const CF_GetParamCmd_t *msg)
 {
     const CF_GetParam_Payload_t *cmd = &msg->Payload;
 
-    CF_GetSetParamCmd(0, cmd->key, 0, cmd->chan_num);
+    CF_GetSetParamCmd(false, cmd->key, 0, cmd->chan_num);
 
     return CFE_SUCCESS;
 }
@@ -1224,7 +1224,7 @@ CFE_Status_t CF_DisableEngineCmd(const CF_DisableEngineCmd_t *msg)
  *-----------------------------------------------------------------*/
 CFE_Status_t CF_SendHkCmd(const CF_SendHkCmd_t *msg)
 {
-    CFE_MSG_SetMsgTime(CFE_MSG_PTR(CF_AppData.hk.TelemetryHeader), CFE_TIME_GetTime());
+    CFE_SB_TimeStampMsg(CFE_MSG_PTR(CF_AppData.hk.TelemetryHeader));
     /* return value ignored */ CFE_SB_TransmitMsg(CFE_MSG_PTR(CF_AppData.hk.TelemetryHeader), true);
 
     /* This is also used to check tables */
