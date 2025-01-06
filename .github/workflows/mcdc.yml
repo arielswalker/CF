@@ -3,6 +3,7 @@ name: Run MCDC
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # Force bash to apply pipefail option so pipeline failures aren't masked
 defaults:
