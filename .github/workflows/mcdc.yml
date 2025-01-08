@@ -1,4 +1,4 @@
-name: Run MCDC
+name: MCDC Analysis
 
 on:
   push:
