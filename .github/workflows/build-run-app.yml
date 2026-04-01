@@ -15,4 +15,4 @@ on:
 jobs:
   build-run:
     name: Build and run with startup msg verification
-    uses: nasa/cFS/.github/workflows/build-run-app.yml@main
+    uses: arielswalker/cFS/.github/workflows/build-run-app-reusable.yml@part-cfs/workflows#177-update-workflows-internal-logic
