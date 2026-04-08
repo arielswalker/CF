@@ -15,4 +15,4 @@ on:
 jobs:
   unit-test-coverage:
     name: Run unit test and coverage
-    uses: nasa/cFS/.github/workflows/unit-test-coverage.yml@main
+    uses: arielswalker/cFS/.github/workflows/unit-test-coverage-reusable.yml@part-cfs/workflows#177-update-workflows-internal-logic

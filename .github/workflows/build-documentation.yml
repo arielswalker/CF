@@ -15,9 +15,8 @@ on:
 jobs:
   build-documentation:
     name: Build and deploy cFS documents
-    uses: nasa/cFS/.github/workflows/build-deploy-doc.yml@main
+    uses: arielswalker/cFS/.github/workflows/build-doc-reusable.yml@part-cfs/workflows#177-update-workflows-internal-logic
     with:
       target: "[\"cf-usersguide\"]"
       app-name: cf
       buildpdf: ${{ github.event_name == 'push' && contains(github.ref, 'main')}}
-      deploy: ${{ github.event_name == 'push' && contains(github.ref, 'main')}}
